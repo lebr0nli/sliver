@@ -1,4 +1,4 @@
-//go:build !darwin && !linux && !freebsd && !openbsd && !dragonfly
+//go:build !darwin && !linux && !freebsd && !openbsd && !dragonfly && !windows
 
 package tunnel_handlers
 

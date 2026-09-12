@@ -39,6 +39,7 @@ import (
 const (
 	darwin            = "darwin"
 	linux             = "linux"
+	windows           = "windows"
 	shellBindTimeout  = 5 * time.Second
 	shellCloseTimeout = 5 * time.Second
 )
@@ -64,8 +65,10 @@ func ShellCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 
 	shellPath, _ := cmd.Flags().GetString("shell-path")
 	noPty, _ := cmd.Flags().GetBool("no-pty")
-	if con.ActiveTarget.GetSession().OS != linux && con.ActiveTarget.GetSession().OS != darwin {
-		noPty = true // Sliver's PTYs are only supported on linux/darwin
+	switch con.ActiveTarget.GetSession().OS {
+	case linux, darwin, windows:
+	default:
+		noPty = true // Sliver's PTYs are only supported on linux/darwin/windows
 	}
 
 	result := runInteractive(cmd, shellPath, noPty, con, nil)
@@ -332,6 +335,16 @@ func runInteractive(cmd *cobra.Command, shellPath string, noPty bool, con *conso
 			path = shell.Path
 		}
 		enablePTY = !noPty
+		if session.OS == windows {
+			// ConPTY only exists as of Windows 10 1809; older hosts silently
+			// fall back to a piped shell, which must not be driven from a raw
+			// local terminal. Implants that predate this field never had a
+			// pseudoconsole, so reporting false for them is correct too.
+			enablePTY = shell.GetEnablePTY()
+			if !noPty && !enablePTY {
+				con.PrintWarnf("Remote host has no ConPTY support, falling back to a piped shell\n")
+			}
+		}
 		managed = &managedShell{
 			SessionID:   session.ID,
 			SessionName: session.Name,

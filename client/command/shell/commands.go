@@ -23,7 +23,7 @@ func Commands(con *console.SliverClient) []*cobra.Command {
 		},
 	}
 	flags.Bind("", false, shellCmd, func(f *pflag.FlagSet) {
-		f.BoolP("no-pty", "y", false, "disable use of pty on macos/linux")
+		f.BoolP("no-pty", "y", false, "disable use of pty on macos/linux/windows")
 		f.StringP("shell-path", "s", "", "path to shell interpreter")
 
 		f.Int64P("timeout", "t", flags.DefaultTimeout, "grpc timeout in seconds")

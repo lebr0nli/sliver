@@ -91,11 +91,12 @@ func pipedShell(tunnelID uint64, command []string) (*Shell, error) {
 	}
 
 	return &Shell{
-		ID:      tunnelID,
-		Command: cmd,
-		Stdout:  stdout,
-		Stdin:   stdin,
-		Cancel:  cancel,
+		ID:     tunnelID,
+		Pid:    cmd.Process.Pid,
+		Stdout: stdout,
+		Stdin:  stdin,
+		Cancel: cancel,
+		wait:   cmd.Wait,
 	}, nil
 }
 
@@ -150,11 +151,13 @@ func ptyShell(tunnelID uint64, command []string, rows, cols uint16) (*Shell, err
 	_ = ttyFile.Close()
 
 	return &Shell{
-		ID:      tunnelID,
-		Command: cmd,
-		Stdout:  term,
-		Stdin:   term,
-		Cancel:  cancel,
+		ID:        tunnelID,
+		Pid:       cmd.Process.Pid,
+		EnablePTY: true,
+		Stdout:    term,
+		Stdin:     term,
+		Cancel:    cancel,
+		wait:      cmd.Wait,
 	}, err
 }
 

@@ -82,11 +82,12 @@ func pipedShell(tunnelID uint64, command []string) (*Shell, error) {
 	}
 
 	return &Shell{
-		ID:      tunnelID,
-		Command: cmd,
-		Stdout:  stdout,
-		Stdin:   stdin,
-		Cancel:  cancel,
+		ID:     tunnelID,
+		Pid:    cmd.Process.Pid,
+		Stdout: stdout,
+		Stdin:  stdin,
+		Cancel: cancel,
+		wait:   cmd.Wait,
 	}, nil
 }
 

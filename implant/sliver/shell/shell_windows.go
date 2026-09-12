@@ -63,7 +63,16 @@ func Start(command string) error {
 }
 
 // StartInteractive - Start a shell
-func StartInteractive(tunnelID uint64, command []string, _ bool, _, _ uint16) (*Shell, error) {
+func StartInteractive(tunnelID uint64, command []string, enablePty bool, rows, cols uint16) (*Shell, error) {
+	if enablePty {
+		systemShell, err := conptyShell(tunnelID, command, rows, cols)
+		if err == nil {
+			return systemShell, nil
+		}
+		// {{if .Config.Debug}}
+		log.Printf("[conpty] %v, falling back to piped shell...", err)
+		// {{end}}
+	}
 	return pipedShell(tunnelID, command)
 }
 
@@ -95,8 +104,9 @@ func pipedShell(tunnelID uint64, command []string) (*Shell, error) {
 		cancel()
 		return nil, err
 	}
-	// Windows does not use a PTY here, and tunnel output has no stderr channel.
-	// Use one pipe so concurrent readers cannot reorder output or race Cmd.Wait.
+	// A piped shell has no PTY to merge the streams, and tunnel output has no
+	// stderr channel. Use one pipe so concurrent readers cannot reorder output
+	// or race Cmd.Wait.
 	cmd.Stderr = cmd.Stdout
 
 	err = cmd.Start()
@@ -108,10 +118,11 @@ func pipedShell(tunnelID uint64, command []string) (*Shell, error) {
 	}
 
 	return &Shell{
-		ID:      tunnelID,
-		Command: cmd,
-		Stdout:  stdout,
-		Stdin:   stdin,
-		Cancel:  cancel,
+		ID:     tunnelID,
+		Pid:    cmd.Process.Pid,
+		Stdout: stdout,
+		Stdin:  stdin,
+		Cancel: cancel,
+		wait:   cmd.Wait,
 	}, nil
 }

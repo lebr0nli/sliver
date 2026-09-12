@@ -116,9 +116,12 @@ func ShellReqHandler(envelope *sliverpb.Envelope, connection *transports.Connect
 	// Queue the start response before any output goroutine can enqueue tunnel
 	// data. Fast shells must not race their own start acknowledgement.
 	shellResp, _ := proto.Marshal(&sliverpb.Shell{
-		Pid:      uint32(systemShell.Command.Process.Pid),
-		Path:     shellReq.Path,
-		TunnelID: shellReq.TunnelID,
+		Pid:  uint32(systemShell.Pid),
+		Path: shellReq.Path,
+		// Report what was actually allocated: a PTY request falls back to a
+		// piped shell on hosts without one.
+		EnablePTY: systemShell.EnablePTY,
+		TunnelID:  shellReq.TunnelID,
 	})
 	if !connection.SendEnvelope(&sliverpb.Envelope{
 		ID:   envelope.ID,

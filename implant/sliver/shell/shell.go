@@ -22,27 +22,26 @@ import (
 	"context"
 	"io"
 	"os"
-	"os/exec"
 )
 
 // Shell - Struct to hold shell related data
 type Shell struct {
-	ID      uint64
-	Command *exec.Cmd
-	Stdout  io.ReadCloser
-	Stdin   io.WriteCloser
-	Stderr  io.ReadCloser
-	Cancel  context.CancelFunc
-}
-
-// Start - starts a command
-func (s *Shell) Start() error {
-	return s.Command.Start()
+	ID        uint64
+	Pid       int
+	EnablePTY bool
+	Stdout    io.ReadCloser
+	Stdin     io.WriteCloser
+	Stderr    io.ReadCloser
+	Cancel    context.CancelFunc
+	wait      func() error
 }
 
 // Wait - waits till the command finish
 func (s *Shell) Wait() error {
-	return s.Command.Wait()
+	if s.wait == nil {
+		return nil
+	}
+	return s.wait()
 }
 
 // Stop - stopping the command (syskill) using context cancel
